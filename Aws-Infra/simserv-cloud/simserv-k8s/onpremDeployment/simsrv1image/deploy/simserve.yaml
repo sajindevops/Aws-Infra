@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simservpy
+spec:
+  selector:
+   matchLabels:
+    app: simservpy
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: simservpy
+    spec:
+      securityContext:
+        fsGroup: 0 
+      containers:
+        - name: simservpy
+          image: docker-local-empro.artifactory.it.keysight.com/simservpythonimage:v2
+          imagePullPolicy: Always
+#          env:
+#           - name: LC_ALL
+#             value: en_US.utf8
+#           - name: LANG
+#             value: en_US.utf8      
+#           - name: HPEESOF_DIRS
+#             value: /project/code/simserv/ads
+#           - name: HPEESOF_DIR
+#             value: /project/code/simserv/ads
+ 
+          ports:
+            - containerPort: 5090
+              name: simservpyport
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/project/code/simserv/bin/simserv", "db", "upgrade"]
+          securityContext:
+            allowPrivilegeEscalation: false
+
+      imagePullSecrets:
+       - name: regcred
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: simservpy
+  labels:
+    app: simservpy
+spec:
+  selector:
+   app: simservpy
+  type: NodePort
+  ports:
+   - port: 5090
+     nodePort: 30500 

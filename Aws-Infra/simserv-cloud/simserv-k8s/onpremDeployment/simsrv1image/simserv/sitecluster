@@ -1,0 +1,10 @@
+#! /bin/sh
+
+selfdir=$(dirname "$(readlink -f "$0")")
+
+#export SITE_CLUSTER_USE_PBS=1
+export SITE_CLUSTER_USE_SUBPROCESS=1
+unset SITE_CLUSTER_USE_LSF
+unset SITE_CLUSTER_USE_SGE
+
+/usr/bin/env python3 "${selfdir}/sitecluster.py" "$@"

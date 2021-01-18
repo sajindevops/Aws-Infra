@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simservpy-ads
+spec:
+  selector:
+   matchLabels:
+    app: simservpy-ads
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: simservpy-ads
+    spec:
+      securityContext:
+        fsGroup: 0
+      volumes:
+      - name: localvol
+        emptyDir: 
+          medium: Memory         
+      initContainers:
+      - name: adsimage-init-cp
+        image: docker-local-empro.artifactory.it.keysight.com/adsimage:v1
+        volumeMounts:
+        - name: localvol 
+          mountPath: /data
+        command: [cp, -a,  /opt/ads, /data]
+      containers:
+      - name: adsimage
+        image: docker-local-empro.artifactory.it.keysight.com/adsimage:v1
+        imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /opt/
+          name: localvol
+        command: ["/bin/sh"]
+        args: ["-c", "chmod a+x -R /opt/ads/fem"]
+        command: ["/bin/sh"]
+        args: ["-c", "while true; do sleep 60; done"]
+      - name: simservnoads
+        image: docker-local-empro.artifactory.it.keysight.com/simservnoads:v1
+        imagePullPolicy: Always
+        env:
+         - name: HPEESOF_DIRS
+           value: /opt/ads/
+         - name: HPEESOF_DIR
+           value: /opt/ads/
+        volumeMounts:
+        - mountPath: /opt/
+          name: localvol
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/project/code/simserv/bin/simserv", "db", "upgrade"]
+        ports:
+        - containerPort: 5090
+          name: simservpyport
+#      - name: adsimage
+#        image: docker-local-empro.artifactory.it.keysight.com/adsimage:v1 
+#        imagePullPolicy: Always
+#        volumeMounts:
+#        - mountPath: /opt/ads_2020_update2.0/ads
+          name: localvol
+        securityContext:
+          allowPrivilegeEscalation: false
+
+      imagePullSecrets:
+      - name: regcred
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: simservpy-ads-svc
+  labels:
+    app: simservpy-ads-svc
+spec:
+  selector:
+   app: simservpy-ads
+  type: NodePort
+  ports:
+   - port: 5090
+     nodePort: 31400 
