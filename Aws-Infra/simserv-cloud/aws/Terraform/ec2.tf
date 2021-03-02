@@ -122,7 +122,7 @@ resource "aws_instance" "simserv" {
 #    private_key = file("simservvmkey030620.pem")
 #  }
 #    inline = [
-#      "chmod +x /tmp/script.sh",
+#      "chmod a+x /tmp/script.sh",
 #      "/tmp/script.sh",
 #    ]
 #  }
